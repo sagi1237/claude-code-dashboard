@@ -1,6 +1,6 @@
 # Practice Instructions
 
-Working rules for building The Bakery Shop sales dashboard (see [spec.md](spec.md)).
+Working rules for building The Bakery Shop dashboards: the sales dashboard (`index.html`) and the HR onboarding dashboard (`hr.html`, see [spec.md](spec.md)).
 
 ## 1. Commit and push on every approved feature
 
@@ -14,10 +14,10 @@ Working rules for building The Bakery Shop sales dashboard (see [spec.md](spec.m
 ## 2. Keep a README up to date
 
 - Create `README.md` if it doesn't exist. It should include:
-  - the dashboard name and logo
-  - a short description of what it shows
-  - a list of features
-  - how to run or open it
+  - the dashboard names and logo
+  - a short description of what each dashboard shows
+  - a list of features for each dashboard
+  - how to run or open them, and the live GitHub Pages links
 - After every approved feature, update the README in the same commit:
   - add or change the feature's entry in the features list
   - update the description if the dashboard's scope changed

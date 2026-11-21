@@ -2,7 +2,7 @@
 
 ![The Bakery Shop logo](logo.png)
 
-Two mobile-first dashboards for The Bakery Shop, each a single static page hosted on GitHub Pages. Both share the logo, colors and large 56 px buttons.
+Two mobile-first dashboards for The Bakery Shop, each a single static page hosted on GitHub Pages. Both use the bakery logo and the same brown, gold and cream palette with teal as the complementary color.
 
 | Dashboard | File | Live page |
 |---|---|---|
@@ -11,24 +11,23 @@ Two mobile-first dashboards for The Bakery Shop, each a single static page hoste
 
 The HR dashboard is described in [spec.md](spec.md). Working rules for this repo are in [practice.md](practice.md).
 
-## HR Onboarding dashboard
+## HR Onboarding Dashboard
 
-Tracks every new hire from signed offer to first month.
+Tracks every new hire from signed offer to a confident first month.
 
 - **Team filter:** All, Kitchen, Counter, Delivery, Admin.
 - **KPI cards:** new hires this month, in progress, overdue tasks, average days to complete.
-- **Onboarding pipeline:** a card per hire with progress bar, status (On track, Needs attention, Starting soon), Open Checklist and Send Reminder buttons.
-- **Next tasks:** tap a task to mark it done; progress and counts update at once.
-- **Starting soon:** hires starting in the next 14 days.
-- **Onboarding by stage:** how many hires are in each stage.
+- **Onboarding pipeline:** one card per hire with a progress bar, a status badge (On track, Needs attention, Starting soon) and large Open Checklist and Send Reminder buttons.
+- **Next tasks:** tap a task to mark it done; progress and counts update straight away.
+- **Starting soon:** hires starting within 14 days.
+- **Onboarding by stage:** how many hires are at each stage.
+- **Mobile friendly:** single column on phones, bottom tab bar, every button at least 56 px.
 
-All figures are mock data. Send Reminder and Add New Hire only show a message in this prototype.
+All figures come from mock data. Send Reminder and the "+" button only show a message in this prototype.
 
-## Sales dashboard
+## Sales Dashboard
 
-A sales dashboard for the shop's owner and counter staff.
-
-### Features
+A sales overview with these features:
 
 - **Date range buttons:** Today, 7 Days, 30 Days, 90 Days.
 - **KPI cards:** total sales, orders, average order and items sold, each with a % change vs the previous period.

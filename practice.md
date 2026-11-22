@@ -22,3 +22,9 @@ Working rules for building The Bakery Shop dashboards: the sales dashboard (`ind
   - add or change the feature's entry in the features list
   - update the description if the dashboard's scope changed
 - Keep entries short, written for someone seeing the dashboard for the first time.
+
+## 3. Update the dashboard features
+
+- Whenever a feature is added, changed or removed, update the feature list of that dashboard in `README.md` in the same commit.
+- If the change affects scope, users or behavior, update the matching section in `spec.md` too.
+- Say in the README whether a feature is real or only a prototype (for example "mock data" or "shows a message only").

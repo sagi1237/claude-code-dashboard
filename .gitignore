@@ -1,4 +1,2 @@
-dist/
-.netlify/
 .env
 .claude/

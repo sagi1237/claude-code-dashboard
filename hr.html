@@ -53,7 +53,6 @@ nav a span{font-size:24px;line-height:1}nav a[aria-current]{color:var(--brown);b
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tab) + 100px);background:var(--teal);color:#fff;padding:14px 22px;border-radius:14px;font-weight:800;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}.toast.show{opacity:1}
 footer{text-align:center;font-size:13px;opacity:.7;margin-top:24px}
 [hidden]{display:none!important}
-.mode{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-weight:800;font-size:14px}.mode .acts2{display:flex;gap:12px}
 dialog{width:min(560px,100%);max-width:100%;max-height:92vh;margin:auto auto 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border:0;border-radius:24px 24px 0 0;background:var(--cream);color:var(--espresso);overflow-y:auto}
 dialog::backdrop{background:rgba(62,36,16,.5)}
 dialog h2{font-size:22px;color:var(--brown);margin:0 0 12px}
@@ -72,9 +71,8 @@ dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px
 <header><div class="wrap head"><img src="logo.png" alt="The Bakery Shop"><div><h1>HR Onboarding</h1><div class="date" id="today"></div></div></div></header>
 <main class="wrap" id="overview">
   <div class="chips" id="chips" role="group" aria-label="Team filter"></div>
-  <div class="mode"><span id="mode" role="status"></span><div class="acts2"><button class="btn secondary" id="refresh" hidden>↻ Refresh</button><button class="btn secondary" id="signout" hidden>Sign out</button></div></div>
   <div id="app"></div>
-  <footer id="foot">Mock data for demonstration</footer>
+  <footer>Mock data for demonstration. Changes are not saved.</footer>
 </main>
 <button class="fab" id="fab" aria-label="Add new hire">+</button>
 <nav aria-label="Main">
@@ -82,15 +80,6 @@ dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px
   <a href="#tasks"><span>✅</span>Tasks</a><a href="#team"><span>👥</span>Team</a>
 </nav>
 <div class="toast" id="toast" role="status"></div>
-<dialog id="loginDlg" aria-labelledby="loginTitle">
-  <h2 id="loginTitle">Sign in</h2>
-  <form id="loginForm">
-    <label>Dashboard password<input type="password" name="password" autocomplete="current-password" required></label>
-    <p class="err" role="alert"></p>
-    <button class="btn primary big" type="submit">Sign In</button>
-    <button class="btn secondary big" type="button" data-close>Cancel</button>
-  </form>
-</dialog>
 <dialog id="addDlg" aria-labelledby="addTitle">
   <h2 id="addTitle">Add New Hire</h2>
   <form id="addForm">
@@ -115,9 +104,6 @@ function mockHire(name,role,t,start,doneCount){return{name:name,role:role,team:t
 var H=[["Maya Cohen","Baker's Assistant","Kitchen",-12,6],["Noam Katz","Barista","Counter",-5,3],["Lior Ben-David","Pastry Chef","Kitchen",-20,7],
 ["Tamar Shalev","Cashier","Counter",-9,4],["Yossi Peretz","Delivery Driver","Delivery",-2,2],["Rina Alon","Shift Manager","Admin",3,2],
 ["Omer Dahan","Dishwasher","Kitchen",5,1],["Shira Golan","Barista","Counter",10,0]].map(function(h){return mockHire(h[0],h[1],h[2],d(h[3]),h[4])});
-// "demo": no server (GitHub Pages or a local file). "live": the server in netlify/functions is available.
-var live=false,signedIn=false,KEY="hrPassword",password="";
-try{password=sessionStorage.getItem(KEY)||""}catch(e){}
 var team="All",app=document.getElementById("app");
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return"&#"+c.charCodeAt(0)+";"})}
@@ -129,13 +115,12 @@ function status(h){if(h.start>d(0)&&!over(h).length)return["soon","Starting soon
 function stage(h){var p=pct(h);return p>=100?4:p>=63?3:p>=38?2:p>=13?1:0}
 function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2200)}
 function render(){
-  if(live&&!signedIn){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>Sign in to see and update the HR database.</p><br><button class="btn primary big" data-signin>Sign In</button></div>';return}
   var L=H.filter(function(h){return team==="All"||h.team===team});
   if(!L.length){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>No new hires in this team yet.</p></div>';return}
   var od=0,prog=0,done=0,days=[];L.forEach(function(h){od+=over(h).length;if(pct(h)<100)prog++;else done++});
   var month=L.filter(function(h){return new Date(h.start).getMonth()===today.getMonth()}).length;
   var html='<section class="kpis" aria-label="Key figures">'+
-   k("New Hires This Month",month)+k("In Progress",prog)+k("Overdue Tasks",od,od>0)+k("Avg Days to Complete",live?"–":"14")+'</section><div class="grid">';
+   k("New Hires This Month",month)+k("In Progress",prog)+k("Overdue Tasks",od,od>0)+k("Avg Days to Complete","14")+'</section><div class="grid">';
   html+='<section class="card span2" id="hires"><h2>Onboarding pipeline</h2><div class="grid" style="margin-top:0">'+L.map(function(h){
     var s=status(h),i=H.indexOf(h);return'<article class="hire"><div class="top"><div class="av" aria-hidden="true">'+esc(ini(h.name))+'</div><div class="n"><b>'+esc(h.name)+'</b><small>'+esc(h.role)+' · starts '+dstr(h.start)+'</small></div></div>'+
     '<div><span class="badge '+s[0]+'">'+s[1]+'</span></div><div><div class="pct"><span>Progress</span><span>'+pct(h)+'%</span></div><div class="bar" role="progressbar" aria-valuenow="'+pct(h)+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct(h)+'%"></i></div></div>'+
@@ -154,78 +139,24 @@ function k(l,v,bad){return'<div class="kpi'+(bad?" bad":"")+'"><div class="l">'+
 var chips=document.getElementById("chips");
 chips.innerHTML=["All","Kitchen","Counter","Delivery","Admin"].map(function(t){return'<button class="chip" aria-pressed="'+(t==="All")+'">'+t+'</button>'}).join("");
 chips.addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;team=b.textContent;chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c===b)});render()});
-function parseDay(s){if(!s)return d(0);var p=s.split("-");return new Date(+p[0],p[1]-1,+p[2]).getTime()}
-function api(method,body){
-  return fetch("api/hr",{method:method,headers:{"x-hr-password":encodeURIComponent(password),"content-type":"application/json"},body:body?JSON.stringify(body):undefined})
-  .then(function(r){return r.json().catch(function(){return{}}).then(function(data){
-    if(!r.ok){var err=new Error(r.status===429?"Too many requests. Wait a minute and try again.":data.error||"The request failed");err.status=r.status;throw err}return data})})
-}
-function showMode(msg){
-  $("mode").textContent=msg||(!live?"Demo data: changes are not saved":signedIn?"Live data · updated "+new Date().toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}):"Not signed in");
-  $("refresh").hidden=$("signout").hidden=!(live&&signedIn);
-  $("foot").textContent=live?"Connected to the HR database":"Mock data for demonstration";
-}
-function load(){
-  return api("GET").then(function(data){
-    H=data.hires.map(function(h){return{name:h.name,role:h.role,team:h.team,start:parseDay(h.startDate),tasks:h.tasks.map(function(t){return{id:t.id,n:t.name,due:parseDay(t.due),done:t.done}})}});
-    signedIn=true;showMode();render();
-  })
-}
-function signOut(){password="";signedIn=false;H=[];try{sessionStorage.removeItem(KEY)}catch(e){}showMode();render()}
-function failed(err){if(err.status===401){signOut();openDialog("loginDlg",err.message)}else toast(err.message)}
-function openDialog(id,msg){var dlg=$(id);dlg.querySelector("form").reset();dlg.querySelector(".err").textContent=msg||"";if(!dlg.open)dlg.showModal()}
-document.querySelectorAll("[data-close]").forEach(function(b){b.addEventListener("click",function(){b.closest("dialog").close()})});
-function onSubmit(formId,handler){
-  var form=$(formId);form.addEventListener("submit",function(e){
-    e.preventDefault();var btn=form.querySelector("[type=submit]"),err=form.querySelector(".err");if(btn.disabled)return;
-    var values={};new FormData(form).forEach(function(v,key){values[key]=v});btn.disabled=true;err.textContent="";
-    handler(values).then(function(){form.closest("dialog").close()}).catch(function(x){err.textContent=x.message}).then(function(){btn.disabled=false});
-  })
-}
-onSubmit("loginForm",function(v){
-  password=v.password;
-  return load().then(function(){try{sessionStorage.setItem(KEY,password)}catch(e){}}).catch(function(x){password="";throw x})
+function parseDay(s){var p=s.split("-");return new Date(+p[0],p[1]-1,+p[2]).getTime()}
+var addDlg=$("addDlg"),addForm=$("addForm"),addErr=addForm.querySelector(".err");
+addDlg.querySelector("[data-close]").addEventListener("click",function(){addDlg.close()});
+addForm.addEventListener("submit",function(e){
+  e.preventDefault();var v={};new FormData(addForm).forEach(function(x,key){v[key]=x.trim()});
+  if(!v.name||!v.role){addErr.textContent="Enter a name and a role";return}
+  H.push(mockHire(v.name,v.role,v.team,parseDay(v.startDate),0));addDlg.close();showTeam("All");toast("Added in demo only. Not saved.");
 });
-onSubmit("addForm",function(v){
-  v.name=v.name.trim();v.role=v.role.trim();
-  if(!v.name||!v.role)return Promise.reject(new Error("Enter a name and a role"));
-  if(!live){H.push(mockHire(v.name,v.role,v.team,parseDay(v.startDate),0));showTeam("All");toast("Added in demo only. Not saved.");return Promise.resolve()}
-  return api("POST",v).then(function(){
-    toast(v.name+" was saved");showTeam("All");
-    return load().catch(function(){toast("Saved. Tap Refresh to see it.")})
-  })
-});
-$("refresh").addEventListener("click",function(){load().then(function(){toast("Data refreshed")}).catch(failed)});
-$("signout").addEventListener("click",signOut);
 function showTeam(name){team=name;chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c.textContent===name)});render()}
-function markDone(btn){
-  var task=H[+btn.dataset.h].tasks[+btn.dataset.t];
-  if(!live){task.done=true;toast("Task marked done");render();return}
-  btn.disabled=true;
-  api("PATCH",{taskId:task.id,done:true}).then(function(){task.done=true;toast("Task marked done");showMode();render()}).catch(function(x){btn.disabled=false;failed(x)})
-}
 app.addEventListener("click",function(e){
-  if(e.target.closest("[data-signin]")){openDialog("loginDlg");return}
-  var t=e.target.closest(".task");if(t){markDone(t);return}
+  var t=e.target.closest(".task");if(t){H[+t.dataset.h].tasks[+t.dataset.t].done=true;toast("Task marked done");render();return}
   var n=e.target.closest("[data-nudge]");if(n){toast("Demo only: no reminder was sent to "+H[+n.dataset.nudge].name.split(" ")[0]);return}
   var l=e.target.closest("[data-list]");if(l){var h=H[+l.dataset.list];toast(h.name.split(" ")[0]+": "+h.tasks.filter(function(x){return x.done}).length+" of "+h.tasks.length+" tasks done")}
 });
-$("fab").addEventListener("click",function(){openDialog(live&&!signedIn?"loginDlg":"addDlg")});
+$("fab").addEventListener("click",function(){addForm.reset();addErr.textContent="";addDlg.showModal()});
 document.querySelectorAll("nav a").forEach(function(a){a.addEventListener("click",function(){document.querySelectorAll("nav a").forEach(function(x){x.removeAttribute("aria-current")});a.setAttribute("aria-current","page")})});
 document.getElementById("today").textContent=today.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
-// The server answers 401 without a password. A host without it answers 404.
-function start(){
-  app.innerHTML='<div class="card empty"><p>Loading…</p></div>';
-  // A web page that cannot reach its server must not fall back to mock data.
-  fetch("api/hr").then(function(r){return r.status!==404}).catch(function(){return/^https?:$/.test(location.protocol)}).then(function(hasServer){
-    live=hasServer;
-    if(!live){showMode();render();return}
-    H=[];showMode();
-    if(!password){render();return}
-    load().catch(function(x){signedIn=false;showMode();render();failed(x)});
-  });
-}
-start();
+render();
 })();
 </script>
 </body>

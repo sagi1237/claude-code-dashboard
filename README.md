@@ -23,30 +23,13 @@ Tracks every new hire from signed offer to a confident first month.
 - **Onboarding by stage:** how many hires are at each stage.
 - **Mobile friendly:** single column on phones, bottom tab bar, every button at least 56 px.
 
-- **Add New Hire:** the "+" button opens a form (name, role, team, start date).
-- **Two modes:**
-  - *Demo* (GitHub Pages or a local file): mock data. New hires and ticked tasks are not saved.
-  - *Live* (Netlify with Airtable): sign in with a password. New hires and ticked tasks are saved to Airtable, and each new hire gets the checklist tasks automatically.
+- **Add New Hire:** the "+" button opens a form (name, role, team, start date). The hire appears on the page but is not saved.
 
-Send Reminder only shows a message in this prototype. "Avg Days to Complete" is a mock figure in demo mode and blank in live mode. Live mode is built and tested against a stand-in database; it still needs the setup below.
+All figures come from mock data, and changes are lost on reload. Send Reminder only shows a message in this prototype.
 
-### Set up live mode
+### Adding workers to the database
 
-1. In Airtable, [create a personal access token](https://airtable.com/create/tokens) with the scopes `data.records:read` and `data.records:write`, limited to the HR onboarding base only.
-2. In [Netlify](https://app.netlify.com), add a new project from this GitHub repository. `netlify.toml` already holds the build settings.
-3. In the project's environment variables, add (mark the token and password as secret):
-
-   | Name | Value |
-   |---|---|
-   | `AIRTABLE_TOKEN` | the token from step 1 |
-   | `AIRTABLE_BASE_ID` | the base ID, which starts with `app` (shown in the base's URL) |
-   | `HR_APP_PASSWORD` | a long password of your choice, at least 12 characters |
-
-4. Redeploy, open `https://YOUR-SITE.netlify.app/hr.html` and sign in.
-
-Never put the token or password in the code or in this repository. Everyone who knows the password can see and change all the HR data, so use test data until per-person logins exist.
-
-You can also add or edit rows directly in Airtable, then tap **Refresh**. A hire added there gets no checklist tasks automatically.
+The HR data is also kept in a private Airtable base. Workers are added there, with an "Add New Hire" form or directly in the table, and an automation creates the checklist tasks. The form must be published and the automation switched on in Airtable. The dashboard is not connected to the base, so it does not show these workers.
 
 ## Sales Dashboard
 

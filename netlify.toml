@@ -1,5 +1,0 @@
-[build]
-  # Publish only the web pages, not the server code or the documents.
-  command = "mkdir -p dist && cp index.html hr.html logo.png dist/"
-  publish = "dist"
-  functions = "netlify/functions"

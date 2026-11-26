@@ -50,8 +50,12 @@ header{border-bottom:3px solid var(--gold);padding-top:env(safe-area-inset-top)}
 .soonrow{min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;border-radius:14px;background:var(--cream);font-weight:800;margin-bottom:8px}
 .empty{text-align:center;padding:28px}.empty img{width:160px;max-width:60%}.empty p{font-weight:700;font-size:18px;margin-top:10px}
 .fab{position:fixed;right:16px;bottom:calc(var(--tab) + 16px + env(safe-area-inset-bottom));width:72px;height:72px;border-radius:50%;border:0;background:var(--orange);color:var(--espresso);font-size:40px;font-weight:800;box-shadow:0 6px 14px rgba(62,36,16,.35);z-index:20}
-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:3px solid var(--gold);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom)}
-nav a{height:var(--tab);display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;color:var(--espresso);font-size:13px;font-weight:800}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:3px solid var(--gold);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding-bottom:env(safe-area-inset-bottom)}
+nav a{height:var(--tab);display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;color:var(--espresso);font-size:12px;font-weight:800;white-space:nowrap}
+.counts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.cand{align-content:start;border:1px solid var(--line);border-radius:16px;padding:14px}
+.cand label{display:grid;gap:6px;font-weight:800;font-size:14px}
+.contact{display:flex;gap:12px;flex-wrap:wrap}.contact a{flex:1;text-decoration:none}
 nav a span{font-size:24px;line-height:1}nav a[aria-current]{color:var(--brown);background:var(--cream);box-shadow:inset 0 4px 0 var(--gold)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tab) + 100px);background:var(--teal);color:#fff;padding:14px 22px;border-radius:14px;font-weight:800;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}.toast.show{opacity:1}
 footer{text-align:center;font-size:13px;opacity:.7;margin-top:24px}
@@ -63,7 +67,7 @@ dialog::backdrop{background:rgba(62,36,16,.5)}
 dialog h2{font-size:22px;color:var(--brown);margin:0 0 12px}
 dialog form{display:grid;gap:12px}
 dialog label{display:grid;gap:6px;font-weight:800}
-dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px;border-radius:16px;border:2px solid var(--gold);background:#fff;color:inherit;font:700 18px Nunito,system-ui,sans-serif}
+dialog input,dialog select,.cand select{width:100%;min-width:0;min-height:56px;padding:0 14px;border-radius:16px;border:2px solid var(--gold);background:#fff;color:inherit;font:700 18px Nunito,system-ui,sans-serif}
 .err{color:var(--berry);font-weight:800}.err:empty{display:none}
 .btn:disabled{opacity:.5;cursor:wait}
 @media(min-width:600px){dialog{margin:auto;border-radius:24px}}
@@ -83,7 +87,7 @@ dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px
 <button class="fab" id="fab" aria-label="Add new hire">+</button>
 <nav aria-label="Main">
   <a href="#overview" aria-current="page"><span>🏠</span>Overview</a><a href="#hires"><span>🧑‍🍳</span>New Hires</a>
-  <a href="#tasks"><span>✅</span>Tasks</a><a href="#team"><span>👥</span>Team</a>
+  <a href="#tasks"><span>✅</span>Tasks</a><a href="#team"><span>👥</span>Team</a><a href="#candidates"><span>📝</span>Candidates</a>
 </nav>
 <div class="toast" id="toast" role="status"></div>
 <dialog id="connectDlg" aria-labelledby="connectTitle">
@@ -94,6 +98,20 @@ dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px
     <label>Airtable token<input type="password" name="token" autocomplete="off" required></label>
     <p class="err" role="alert"></p>
     <button class="btn primary big" type="submit">Connect</button>
+    <button class="btn secondary big" type="button" data-close>Cancel</button>
+  </form>
+</dialog>
+<dialog id="candDlg" aria-labelledby="candTitle">
+  <h2 id="candTitle">Add Candidate</h2>
+  <p class="note" id="candNote"></p>
+  <form id="candForm">
+    <label>Full name<input name="name" maxlength="80" autocomplete="off" required></label>
+    <label>Position<input name="position" maxlength="80" autocomplete="off" required></label>
+    <label>Team<select name="team" required><option value="">Choose a team</option><option>Kitchen</option><option>Counter</option><option>Delivery</option><option>Admin</option></select></label>
+    <label>Phone (optional)<input type="tel" name="phone" maxlength="30" autocomplete="off"></label>
+    <label>Email (optional)<input type="email" name="email" maxlength="120" autocomplete="off"></label>
+    <p class="err" role="alert"></p>
+    <button class="btn primary big" type="submit">✔ Save Candidate</button>
     <button class="btn secondary big" type="button" data-close>Cancel</button>
   </form>
 </dialog>
@@ -122,6 +140,12 @@ function mockHire(name,role,t,start,doneCount){return{name:name,role:role,team:t
 var H=[["Maya Cohen","Baker's Assistant","Kitchen",-12,6],["Noam Katz","Barista","Counter",-5,3],["Lior Ben-David","Pastry Chef","Kitchen",-20,7],
 ["Tamar Shalev","Cashier","Counter",-9,4],["Yossi Peretz","Delivery Driver","Delivery",-2,2],["Rina Alon","Shift Manager","Admin",3,2],
 ["Omer Dahan","Dishwasher","Kitchen",5,1],["Shira Golan","Barista","Counter",10,0]].map(function(h){return mockHire(h[0],h[1],h[2],d(h[3]),h[4])});
+var STAGES=["New","Phone Screen","Interview","Trial Shift","Offer","Hired","Rejected"];
+// C is null when the connected base has no readable Candidates table.
+var C=[["Dana Mizrahi","Baker","Kitchen","New",-1],["Amir Hadad","Barista","Counter","Phone Screen",-3],["Noa Friedman","Pastry Chef","Kitchen","Interview",-6],
+["Eli Ben-Haim","Delivery Driver","Delivery","Trial Shift",-9],["Yael Azulay","Cashier","Counter","Offer",-12],["Tom Segal","Office Assistant","Admin","Rejected",-15]]
+.map(function(c,i){return{id:"demo"+i,name:c[0],position:c[1],team:c[2],stage:c[3],applied:d(c[4]),phone:"",email:""}});
+var demoC=C;
 // conn is null in demo mode. When connected it holds {base, token} for this tab only.
 var demo=H,conn=null,loaded=false,loadSeq=0,stepCount=0,KEY="hrAirtable";
 var team="All",app=document.getElementById("app");
@@ -137,7 +161,7 @@ function toast(m){var t=document.getElementById("toast");t.textContent=m;t.class
 function render(){
   if(conn&&!loaded){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>Loading your data. If this stays, tap Refresh.</p></div>';return}
   var L=H.filter(function(h){return team==="All"||h.team===team});
-  if(!L.length){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>No new hires in this team yet.</p></div>';return}
+  if(!L.length){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>No new hires in this team yet.</p></div><div class="grid">'+candidatesCard()+'</div>';return}
   var od=0,prog=0,done=0,days=[];L.forEach(function(h){od+=over(h).length;if(pct(h)<100)prog++;else done++});
   var month=L.filter(function(h){return new Date(h.start).getMonth()===today.getMonth()}).length;
   var html='<section class="kpis" aria-label="Key figures">'+
@@ -153,8 +177,22 @@ function render(){
   var soon=L.filter(function(h){return h.start>d(0)&&h.start<=d(14)});
   html+='<section class="card"><h2>Starting soon</h2>'+(soon.length?soon.map(function(h){return'<div class="soonrow"><span>'+esc(h.name)+'</span><span>'+dstr(h.start)+'</span></div>'}).join(""):'<p>Nobody in the next 14 days.</p>')+'</section>';
   var st=[0,0,0,0,0],names=["Offer signed","Paperwork","Training","First shifts","Complete"];L.forEach(function(h){st[stage(h)]++});
-  html+='<section class="card" id="team"><h2>Onboarding by stage</h2>'+names.map(function(n,i){return'<div class="stage"><span>'+n+'</span><div class="bar"><i style="width:'+st[i]/L.length*100+'%"></i></div><span>'+st[i]+'</span></div>'}).join("")+'</section></div>';
+  html+='<section class="card" id="team"><h2>Onboarding by stage</h2>'+names.map(function(n,i){return'<div class="stage"><span>'+n+'</span><div class="bar"><i style="width:'+st[i]/L.length*100+'%"></i></div><span>'+st[i]+'</span></div>'}).join("")+'</section>'+candidatesCard()+'</div>';
   app.innerHTML=html;
+}
+function candidatesCard(){
+  var head='<section class="card span2" id="candidates"><h2>Candidates</h2>';
+  if(!C)return head+'<p>Could not read the Candidates table. Check that your base has it and that the token can read it.</p></section>';
+  var L=C.filter(function(c){return team==="All"||c.team===team}).sort(function(a,b){return(b.applied||0)-(a.applied||0)});
+  var counts=STAGES.map(function(s){var n=L.filter(function(c){return c.stage===s}).length;return n?'<span class="badge soon">'+s+': '+n+'</span>':''}).join("");
+  return head+'<button class="btn primary big" data-addcand>＋ Add Candidate</button><div class="counts">'+counts+'</div>'+
+  (L.length?'<div class="grid">'+L.map(function(c){
+    var tel=c.phone.replace(/[^\d+]/g,""),mail=/^[^\s@?&#]+@[^\s@?&#]+\.[^\s@?&#]+$/.test(c.email)?c.email:"";
+    var options=(STAGES.indexOf(c.stage)<0?STAGES.concat(c.stage):STAGES).map(function(s){return'<option'+(s===c.stage?' selected':'')+'>'+esc(s)+'</option>'}).join("");
+    return'<article class="hire cand"><div class="top"><div class="av" aria-hidden="true">'+esc(ini(c.name))+'</div><div class="n"><b>'+esc(c.name)+'</b><small>'+esc([c.position,c.team,c.applied?"applied "+dstr(c.applied):""].filter(Boolean).join(" · "))+'</small></div></div>'+
+    (tel||mail?'<div class="contact">'+(tel?'<a class="btn secondary" href="tel:'+tel+'">📞 Call</a>':'')+(mail?'<a class="btn secondary" href="mailto:'+esc(mail)+'">✉ Email</a>':'')+'</div>':'')+
+    '<label>Stage<select data-stage="'+esc(c.id)+'" aria-label="Stage for '+esc(c.name)+'">'+options+'</select></label></article>'}).join("")+'</div>'
+  :'<p class="counts">No candidates here yet.</p>')+'</section>';
 }
 function k(l,v,bad){return'<div class="kpi'+(bad?" bad":"")+'"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>'}
 var chips=document.getElementById("chips");
@@ -180,12 +218,16 @@ function fetchData(c){
   // One table after another, to stay under Airtable's request limit.
   return listAll(c,"New Hires").then(function(r){hires=r;return listAll(c,"Checklist Template")})
   .then(function(r){r.forEach(function(x){steps[x.id]=x.fields});return listAll(c,"Onboarding Tasks")})
-  .then(function(tasks){return{stepCount:Object.keys(steps).length,hires:hires.filter(function(h){return h.fields["Name"]}).map(function(h){var f=h.fields;
+  .then(function(tasks){return listAll(c,"Candidates").then(function(r){return r.filter(function(x){return x.fields["Name"]}).map(toCandidate)})
+  // A base without this table still shows the rest of the dashboard.
+  .catch(function(err){if(err.status===403||err.status===404)return null;throw err})
+  .then(function(candidates){return{candidates:candidates,stepCount:Object.keys(steps).length,hires:hires.filter(function(h){return h.fields["Name"]}).map(function(h){var f=h.fields;
     return{id:h.id,name:String(f["Name"]),role:f["Role"]||"",team:f["Team"]||"",start:day(f["Start Date"]),tasks:tasks.filter(function(t){return(t.fields["Hire"]||[]).indexOf(h.id)>-1}).map(function(t){
       var s=steps[(t.fields["Checklist Step"]||[])[0]]||{};
-      return{id:t.id,order:s["Step"]||99,n:s["Task"]||t.fields["Task Name"]||"Task",due:day(t.fields["Due"]||t.fields["Due Date"]),done:!!t.fields["Done"]}}).sort(function(a,b){return a.order-b.order})}})}});
+      return{id:t.id,order:s["Step"]||99,n:s["Task"]||t.fields["Task Name"]||"Task",due:day(t.fields["Due"]||t.fields["Due Date"]),done:!!t.fields["Done"]}}).sort(function(a,b){return a.order-b.order})}})}})});
 }
-function apply(data){H=data.hires;stepCount=data.stepCount;loaded=true;showMode();render()}
+function toCandidate(r){var f=r.fields;return{id:r.id,name:String(f["Name"]),position:f["Position"]||"",team:f["Team"]||"",stage:f["Stage"]||"New",applied:f["Applied Date"]?day(f["Applied Date"]):null,phone:String(f["Phone"]||""),email:String(f["Email"]||"")}}
+function apply(data){C=data.candidates;H=data.hires;stepCount=data.stepCount;loaded=true;showMode();render()}
 // Only the newest request may update the screen.
 function load(){var c=conn,seq=++loadSeq;return fetchData(c).then(function(data){if(c===conn&&seq===loadSeq)apply(data)})}
 function showMode(){
@@ -193,7 +235,7 @@ function showMode(){
   $("connect").hidden=!!conn;$("refresh").hidden=$("disconnect").hidden=!conn;
   $("foot").textContent=conn?"Connected to your Airtable base":"Mock data for demonstration. Changes are not saved.";
 }
-function disconnect(){conn=null;loaded=false;H=demo;try{sessionStorage.removeItem(KEY)}catch(e){}showMode();render()}
+function disconnect(){conn=null;loaded=false;H=demo;C=demoC;try{sessionStorage.removeItem(KEY)}catch(e){}showMode();render()}
 function failed(err){if(err.status===401){disconnect();openDialog("connectDlg",err.message)}else toast(err.message)}
 
 // Dialogs
@@ -256,7 +298,36 @@ function markDone(btn){
     H.forEach(function(h){h.tasks.forEach(function(t){if(t.id===task.id)t.done=true})});toast("Task marked done");showMode();render();
   }).catch(function(err){btn.disabled=false;failed(err)});
 }
+// Candidates
+function isoDay(t){var x=new Date(t);return x.getFullYear()+"-"+("0"+(x.getMonth()+1)).slice(-2)+"-"+("0"+x.getDate()).slice(-2)}
+onSubmit("candForm",function(v,dlg){
+  if(!v.name||!v.position)return Promise.reject(new Error("Enter a name and a position"));
+  var c=conn;
+  if(!c){C.push({id:"demo"+C.length,name:v.name,position:v.position,team:v.team,stage:"New",applied:d(0),phone:v.phone,email:v.email});dlg.close();showTeam("All");toast("Added in demo only. Not saved.");return Promise.resolve()}
+  var fields={"Name":v.name,"Position":v.position,"Team":v.team,"Stage":"New","Applied Date":isoDay(d(0))};
+  if(v.phone)fields["Phone"]=v.phone;
+  if(v.email)fields["Email"]=v.email;
+  return airtable(c,"Candidates","POST",{records:[{fields:fields}]}).then(function(res){
+    dlg.close();if(c!==conn)return;
+    loadSeq++;if(C)C.push(toCandidate(res.records[0]));showTeam("All");showMode();toast(v.name+" was saved");
+  }).catch(function(err){if(err.status===401){dlg.close();failed(err)}else throw err});
+});
+function setStage(select){
+  var id=select.dataset.stage,value=select.value,c=conn;
+  function done(){
+    var item=C.filter(function(x){return x.id===id})[0];if(!item)return;
+    item.stage=value;render();toast(item.name+": "+value);
+    var again=app.querySelector('[data-stage="'+id+'"]');if(again)again.focus();
+  }
+  if(!c){done();return}
+  select.disabled=true;
+  airtable(c,"Candidates","PATCH",{records:[{id:id,fields:{"Stage":value}}]}).then(function(){
+    if(c!==conn)return;loadSeq++;done();showMode();
+  }).catch(function(err){if(c===conn){render();failed(err)}});
+}
+app.addEventListener("change",function(e){if(e.target.dataset.stage)setStage(e.target)});
 app.addEventListener("click",function(e){
+  if(e.target.closest("[data-addcand]")){$("candNote").textContent=conn?"This candidate will be saved to your Airtable base.":"Demo mode: the candidate will not be saved. Connect to Airtable to save.";openDialog("candDlg");return}
   var t=e.target.closest(".task");if(t){markDone(t);return}
   var n=e.target.closest("[data-nudge]");if(n){toast("No reminder was sent to "+H[+n.dataset.nudge].name.split(" ")[0]+". Reminders are not built yet.");return}
   var l=e.target.closest("[data-list]");if(l){var h=H[+l.dataset.list];toast(h.name.split(" ")[0]+": "+h.tasks.filter(function(x){return x.done}).length+" of "+h.tasks.length+" tasks done")}
@@ -265,7 +336,7 @@ $("fab").addEventListener("click",function(){$("addNote").textContent=conn?"This
 document.querySelectorAll("nav a").forEach(function(a){a.addEventListener("click",function(){document.querySelectorAll("nav a").forEach(function(x){x.removeAttribute("aria-current")});a.setAttribute("aria-current","page")})});
 document.getElementById("today").textContent=today.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
 try{conn=JSON.parse(sessionStorage.getItem(KEY))}catch(e){}
-if(conn){H=[];showMode();render();load().catch(failed)}else{showMode();render()}
+if(conn){H=[];C=[];showMode();render();load().catch(failed)}else{showMode();render()}
 })();
 </script>
 </body>

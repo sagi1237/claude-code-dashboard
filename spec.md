@@ -154,7 +154,7 @@ Nunito everywhere, base 16 px, key figures 30 to 40 px bold, tabular figures for
 
 - Design at 360 × 800 first. Breakpoints: 600 px (2 columns) and 1024 px (3 to 4 columns).
 - Single column on phones, no horizontal scrolling at any width, charts and bars resize to the container.
-- Bottom tab bar (64 px): Overview · New Hires · Tasks · Team.
+- Bottom tab bar (64 px): Overview · New Hires · Tasks · Team · Candidates.
 - Safe-area insets respected; works in portrait and landscape.
 
 ## 4. Large buttons
@@ -174,7 +174,8 @@ Nunito everywhere, base 16 px, key figures 30 to 40 px bold, tabular figures for
 5. **Today's checklist:** the next tasks due, each a 56 px tappable row with a checkbox (tap to mark done).
 6. **Starting soon:** hires starting within 14 days.
 7. **Onboarding by stage:** horizontal bars, count of hires per stage (Offer Signed, Paperwork, Training, First Shifts, Complete).
-8. **Bottom tab bar** and the floating "+" button.
+8. **Candidates:** one card per applicant (name, position, team, date applied, optional Call and Email buttons, stage selector), a count per stage and a large "Add Candidate" button. The team filter applies.
+9. **Bottom tab bar** (including Candidates) and the floating "+" button.
 
 ## 6. Onboarding checklist (standard template)
 
@@ -213,6 +214,7 @@ Status is derived: overdue tasks → Needs attention; start date in the future �
 - Demo mode (default): mock data, clearly labelled; "Add New Hire" adds on screen only and nothing is saved.
 - Live mode: "Connect to Airtable" takes a base ID and a personal access token. The token is kept for that browser tab only and sent only to Airtable. "Add New Hire" saves the hire, an Airtable automation creates the checklist tasks, and the dashboard reloads until they appear.
 - Live mode is meant for the owner of the token on their own device; it is not a login system for the team.
+- Candidate stages: New → Phone Screen → Interview → Trial Shift → Offer → Hired, or Rejected. In live mode, candidates are read from and saved to the Airtable `Candidates` table (`Name`, `Position`, `Team`, `Stage`, `Applied Date`, `Phone`, `Email`, `Notes`). Candidate details are personal data, with the same care as employee data. "Hired" does not create a new hire automatically.
 - Filter chips update all cards together.
 - Empty state: logo plus "No new hires in this team yet."
 
@@ -222,7 +224,7 @@ Text status next to every color, labels on icon buttons, focus order follows vis
 
 ## 10. Out of scope (v1)
 
-Real authentication and roles, payroll, document upload, real email/SMS sending, recruiting pipeline.
+Real authentication and roles, payroll, document upload, real email/SMS sending, public job application page.
 
 ## 11. Acceptance criteria
 

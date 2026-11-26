@@ -24,15 +24,16 @@ Tracks every new hire from signed offer to a confident first month.
 - **Mobile friendly:** single column on phones, bottom tab bar, every button at least 56 px.
 
 - **Add New Hire:** the "+" button opens a form (name, role, team, start date).
+- **Candidates:** job applicants with position, team, date applied, optional Call and Email buttons, and a stage you can change (New, Phone Screen, Interview, Trial Shift, Offer, Hired, Rejected). "Add Candidate" adds one. Setting "Hired" does not create a new hire; add them with "+".
 - **Two modes:**
   - *Demo* (default): mock data. Changes are lost on reload.
-  - *Live*: tap **Connect to Airtable**. The dashboard shows your base, and saves new hires and ticked tasks to it.
+  - *Live*: tap **Connect to Airtable**. The dashboard shows your base, and saves new hires, ticked tasks and candidates to it.
 
-Send Reminder only shows a message in this prototype. "Avg Days to Complete" is a mock figure in demo mode and blank in live mode. Live mode has been tested against a stand-in database, not yet against a real base.
+Send Reminder only shows a message in this prototype. "Avg Days to Complete" is a mock figure in demo mode and blank in live mode. Adding a hire has been tested against a real base; ticking tasks and the candidates section have been tested against a stand-in database only.
 
 ### Connect to Airtable
 
-You need an Airtable base with the tables `New Hires`, `Checklist Template` and `Onboarding Tasks`, and an automation that creates the checklist tasks for each new hire. The automation must be switched on.
+You need an Airtable base with the tables `New Hires`, `Checklist Template` and `Onboarding Tasks`, and an automation that creates the checklist tasks for each new hire. The automation must be switched on. The Candidates section also needs a `Candidates` table with the fields `Name`, `Position`, `Team`, `Stage`, `Applied Date`, `Phone` and `Email`.
 
 1. [Create a personal access token](https://airtable.com/create/tokens) with the scopes `data.records:read` and `data.records:write`, limited to the HR onboarding base only.
 2. Open the dashboard, tap **Connect to Airtable**, and enter the base ID (or the base's link) and the token.

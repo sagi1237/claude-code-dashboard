@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- The Airtable token is typed into this page, so it may only be sent to Airtable. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' file: data:; connect-src https://api.airtable.com; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The Bakery Shop HR Onboarding</title>
 <meta name="theme-color" content="#FFF6E5">
@@ -53,6 +56,8 @@ nav a span{font-size:24px;line-height:1}nav a[aria-current]{color:var(--brown);b
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tab) + 100px);background:var(--teal);color:#fff;padding:14px 22px;border-radius:14px;font-weight:800;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}.toast.show{opacity:1}
 footer{text-align:center;font-size:13px;opacity:.7;margin-top:24px}
 [hidden]{display:none!important}
+.mode{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-weight:800;font-size:14px}.mode .acts2{display:flex;gap:12px;flex-wrap:wrap}
+.note{font-weight:700;font-size:14px;margin-bottom:12px}
 dialog{width:min(560px,100%);max-width:100%;max-height:92vh;margin:auto auto 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border:0;border-radius:24px 24px 0 0;background:var(--cream);color:var(--espresso);overflow-y:auto}
 dialog::backdrop{background:rgba(62,36,16,.5)}
 dialog h2{font-size:22px;color:var(--brown);margin:0 0 12px}
@@ -71,8 +76,9 @@ dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px
 <header><div class="wrap head"><img src="logo.png" alt="The Bakery Shop"><div><h1>HR Onboarding</h1><div class="date" id="today"></div></div></div></header>
 <main class="wrap" id="overview">
   <div class="chips" id="chips" role="group" aria-label="Team filter"></div>
+  <div class="mode"><span id="mode" role="status"></span><div class="acts2"><button class="btn secondary" id="connect">🔌 Connect to Airtable</button><button class="btn secondary" id="refresh" hidden>↻ Refresh</button><button class="btn secondary" id="disconnect" hidden>Disconnect</button></div></div>
   <div id="app"></div>
-  <footer>Mock data for demonstration. Changes are not saved.</footer>
+  <footer id="foot"></footer>
 </main>
 <button class="fab" id="fab" aria-label="Add new hire">+</button>
 <nav aria-label="Main">
@@ -80,8 +86,20 @@ dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px
   <a href="#tasks"><span>✅</span>Tasks</a><a href="#team"><span>👥</span>Team</a>
 </nav>
 <div class="toast" id="toast" role="status"></div>
+<dialog id="connectDlg" aria-labelledby="connectTitle">
+  <h2 id="connectTitle">Connect to Airtable</h2>
+  <p class="note">Your token stays in this browser tab and is sent only to Airtable. Use this on your own device.</p>
+  <form id="connectForm">
+    <label>Base ID or base link<input name="base" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="app…" required></label>
+    <label>Airtable token<input type="password" name="token" autocomplete="off" required></label>
+    <p class="err" role="alert"></p>
+    <button class="btn primary big" type="submit">Connect</button>
+    <button class="btn secondary big" type="button" data-close>Cancel</button>
+  </form>
+</dialog>
 <dialog id="addDlg" aria-labelledby="addTitle">
   <h2 id="addTitle">Add New Hire</h2>
+  <p class="note" id="addNote"></p>
   <form id="addForm">
     <label>Full name<input name="name" maxlength="80" autocomplete="off" required></label>
     <label>Role<input name="role" maxlength="80" autocomplete="off" required></label>
@@ -104,6 +122,8 @@ function mockHire(name,role,t,start,doneCount){return{name:name,role:role,team:t
 var H=[["Maya Cohen","Baker's Assistant","Kitchen",-12,6],["Noam Katz","Barista","Counter",-5,3],["Lior Ben-David","Pastry Chef","Kitchen",-20,7],
 ["Tamar Shalev","Cashier","Counter",-9,4],["Yossi Peretz","Delivery Driver","Delivery",-2,2],["Rina Alon","Shift Manager","Admin",3,2],
 ["Omer Dahan","Dishwasher","Kitchen",5,1],["Shira Golan","Barista","Counter",10,0]].map(function(h){return mockHire(h[0],h[1],h[2],d(h[3]),h[4])});
+// conn is null in demo mode. When connected it holds {base, token} for this tab only.
+var demo=H,conn=null,loaded=false,loadSeq=0,stepCount=0,KEY="hrAirtable";
 var team="All",app=document.getElementById("app");
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return"&#"+c.charCodeAt(0)+";"})}
@@ -115,12 +135,13 @@ function status(h){if(h.start>d(0)&&!over(h).length)return["soon","Starting soon
 function stage(h){var p=pct(h);return p>=100?4:p>=63?3:p>=38?2:p>=13?1:0}
 function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2200)}
 function render(){
+  if(conn&&!loaded){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>Loading your data. If this stays, tap Refresh.</p></div>';return}
   var L=H.filter(function(h){return team==="All"||h.team===team});
   if(!L.length){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>No new hires in this team yet.</p></div>';return}
   var od=0,prog=0,done=0,days=[];L.forEach(function(h){od+=over(h).length;if(pct(h)<100)prog++;else done++});
   var month=L.filter(function(h){return new Date(h.start).getMonth()===today.getMonth()}).length;
   var html='<section class="kpis" aria-label="Key figures">'+
-   k("New Hires This Month",month)+k("In Progress",prog)+k("Overdue Tasks",od,od>0)+k("Avg Days to Complete","14")+'</section><div class="grid">';
+   k("New Hires This Month",month)+k("In Progress",prog)+k("Overdue Tasks",od,od>0)+k("Avg Days to Complete",conn?"–":"14")+'</section><div class="grid">';
   html+='<section class="card span2" id="hires"><h2>Onboarding pipeline</h2><div class="grid" style="margin-top:0">'+L.map(function(h){
     var s=status(h),i=H.indexOf(h);return'<article class="hire"><div class="top"><div class="av" aria-hidden="true">'+esc(ini(h.name))+'</div><div class="n"><b>'+esc(h.name)+'</b><small>'+esc(h.role)+' · starts '+dstr(h.start)+'</small></div></div>'+
     '<div><span class="badge '+s[0]+'">'+s[1]+'</span></div><div><div class="pct"><span>Progress</span><span>'+pct(h)+'%</span></div><div class="bar" role="progressbar" aria-valuenow="'+pct(h)+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct(h)+'%"></i></div></div>'+
@@ -140,23 +161,111 @@ var chips=document.getElementById("chips");
 chips.innerHTML=["All","Kitchen","Counter","Delivery","Admin"].map(function(t){return'<button class="chip" aria-pressed="'+(t==="All")+'">'+t+'</button>'}).join("");
 chips.addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;team=b.textContent;chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c===b)});render()});
 function parseDay(s){var p=s.split("-");return new Date(+p[0],p[1]-1,+p[2]).getTime()}
-var addDlg=$("addDlg"),addForm=$("addForm"),addErr=addForm.querySelector(".err");
-addDlg.querySelector("[data-close]").addEventListener("click",function(){addDlg.close()});
-addForm.addEventListener("submit",function(e){
-  e.preventDefault();var v={};new FormData(addForm).forEach(function(x,key){v[key]=x.trim()});
-  if(!v.name||!v.role){addErr.textContent="Enter a name and a role";return}
-  H.push(mockHire(v.name,v.role,v.team,parseDay(v.startDate),0));addDlg.close();showTeam("All");toast("Added in demo only. Not saved.");
+// Airtable
+function airtable(c,table,method,body,query){
+  return fetch("https://api.airtable.com/v0/"+c.base+"/"+encodeURIComponent(table)+(query||""),{method:method||"GET",cache:"no-store",headers:{authorization:"Bearer "+c.token,"content-type":"application/json"},body:body?JSON.stringify(body):undefined})
+  .catch(function(){throw new Error(method?"No answer from Airtable. Check there before trying again.":"Could not reach Airtable. Check your internet connection.")})
+  .then(function(r){
+    if(r.ok)return r.json();
+    var m={401:"Airtable rejected the token.",403:"No access. Check the base ID and the token's permissions.",404:"Not found. Check the base ID and the token's base access.",422:"Airtable refused the data. Check that table and field names are unchanged.",429:"Too many requests. Wait 30 seconds and try again."};
+    var err=new Error(m[r.status]||"The database request failed ("+r.status+").");err.status=r.status;throw err});
+}
+function listAll(c,table,offset,rows){
+  return airtable(c,table,null,null,"?pageSize=100"+(offset?"&offset="+encodeURIComponent(offset):"")).then(function(page){
+    rows=(rows||[]).concat(page.records);return page.offset?listAll(c,table,page.offset,rows):rows});
+}
+function day(s){return s?parseDay(String(s).slice(0,10)):d(0)}
+function fetchData(c){
+  var hires,steps={};
+  // One table after another, to stay under Airtable's request limit.
+  return listAll(c,"New Hires").then(function(r){hires=r;return listAll(c,"Checklist Template")})
+  .then(function(r){r.forEach(function(x){steps[x.id]=x.fields});return listAll(c,"Onboarding Tasks")})
+  .then(function(tasks){return{stepCount:Object.keys(steps).length,hires:hires.filter(function(h){return h.fields["Name"]}).map(function(h){var f=h.fields;
+    return{id:h.id,name:String(f["Name"]),role:f["Role"]||"",team:f["Team"]||"",start:day(f["Start Date"]),tasks:tasks.filter(function(t){return(t.fields["Hire"]||[]).indexOf(h.id)>-1}).map(function(t){
+      var s=steps[(t.fields["Checklist Step"]||[])[0]]||{};
+      return{id:t.id,order:s["Step"]||99,n:s["Task"]||t.fields["Task Name"]||"Task",due:day(t.fields["Due"]||t.fields["Due Date"]),done:!!t.fields["Done"]}}).sort(function(a,b){return a.order-b.order})}})}});
+}
+function apply(data){H=data.hires;stepCount=data.stepCount;loaded=true;showMode();render()}
+// Only the newest request may update the screen.
+function load(){var c=conn,seq=++loadSeq;return fetchData(c).then(function(data){if(c===conn&&seq===loadSeq)apply(data)})}
+function showMode(){
+  $("mode").textContent=!conn?"Demo data: changes are not saved":loaded?"Live from Airtable · updated "+new Date().toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}):"Connecting to Airtable…";
+  $("connect").hidden=!!conn;$("refresh").hidden=$("disconnect").hidden=!conn;
+  $("foot").textContent=conn?"Connected to your Airtable base":"Mock data for demonstration. Changes are not saved.";
+}
+function disconnect(){conn=null;loaded=false;H=demo;try{sessionStorage.removeItem(KEY)}catch(e){}showMode();render()}
+function failed(err){if(err.status===401){disconnect();openDialog("connectDlg",err.message)}else toast(err.message)}
+
+// Dialogs
+function openDialog(id,msg){var dlg=$(id);dlg.querySelector("form").reset();dlg.querySelector(".err").textContent=msg||"";dlg.querySelector("[type=submit]").disabled=false;if(!dlg.open)dlg.showModal()}
+document.querySelectorAll("[data-close]").forEach(function(b){b.addEventListener("click",function(){b.closest("dialog").close()})});
+function onSubmit(formId,handler){
+  var form=$(formId);form.addEventListener("submit",function(e){
+    e.preventDefault();var btn=form.querySelector("[type=submit]"),err=form.querySelector(".err");if(btn.disabled)return;
+    var v={};new FormData(form).forEach(function(x,key){v[key]=x.trim()});btn.disabled=true;err.textContent="";
+    handler(v,form.closest("dialog")).catch(function(x){err.textContent=x.message}).then(function(){btn.disabled=false});
+  });
+}
+var attempt=0;
+// Closing the dialog cancels a pending attempt and clears the typed token from the page.
+function cancelConnect(){attempt++;$("connectForm").reset()}
+$("connectDlg").addEventListener("close",cancelConnect); // Esc key
+$("connectForm").querySelector("[data-close]").addEventListener("click",cancelConnect);
+onSubmit("connectForm",function(v,dlg){
+  var base=(v.base.match(/app[A-Za-z0-9]{14}/)||[])[0];
+  if(!base)return Promise.reject(new Error("The base ID starts with app and has 17 characters."));
+  if(!/^[!-~]+$/.test(v.token))return Promise.reject(new Error("That does not look like a token."));
+  var c={base:base,token:v.token},mine=attempt;
+  return fetchData(c).then(function(data){
+    if(mine!==attempt)return; // cancelled while connecting
+    conn=c;loadSeq++;try{sessionStorage.setItem(KEY,JSON.stringify(c))}catch(e){}
+    dlg.close();cancelConnect();apply(data);toast("Connected to Airtable");
+  });
 });
+// The Airtable automation creates the checklist tasks a few seconds after the hire is saved.
+function awaitTasks(c,id,tries){
+  load().then(function(){
+    if(c!==conn)return;
+    var h=H.filter(function(x){return x.id===id})[0];
+    if(h&&h.tasks.length>=stepCount){toast(h.name+": "+h.tasks.length+" tasks created");return}
+    if(tries>1)setTimeout(function(){if(c===conn)awaitTasks(c,id,tries-1)},4000);
+    else toast("Saved, but tasks are missing. Check the Airtable automation, then tap Refresh.");
+  }).catch(failed);
+}
+onSubmit("addForm",function(v,dlg){
+  if(!v.name||!v.role)return Promise.reject(new Error("Enter a name and a role"));
+  var c=conn;
+  if(!c){H.push(mockHire(v.name,v.role,v.team,parseDay(v.startDate),0));dlg.close();showTeam("All");toast("Added in demo only. Not saved.");return Promise.resolve()}
+  return listAll(c,"New Hires").then(function(rows){
+    var last=rows.reduce(function(max,r){var m=/^E-(\d+)$/.exec(r.fields["Employee ID"]||"");return m?Math.max(max,+m[1]):max},200);
+    return airtable(c,"New Hires","POST",{records:[{fields:{"Name":v.name,"Employee ID":"E-"+(last+1),"Role":v.role,"Team":v.team,"Start Date":v.startDate}}]});
+  }).then(function(res){dlg.close();showTeam("All");toast(v.name+" was saved");awaitTasks(c,res.records[0].id,5)})
+  .catch(function(err){if(err.status===401){dlg.close();failed(err)}else throw err});
+});
+$("connect").addEventListener("click",function(){openDialog("connectDlg")});
+$("disconnect").addEventListener("click",function(){disconnect();toast("Disconnected")});
+$("refresh").addEventListener("click",function(){var b=this;b.disabled=true;load().then(function(){toast("Data refreshed")}).catch(failed).then(function(){b.disabled=false})});
 function showTeam(name){team=name;chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c.textContent===name)});render()}
+function markDone(btn){
+  var task=H[+btn.dataset.h].tasks[+btn.dataset.t],c=conn;
+  if(!c){task.done=true;toast("Task marked done");render();return}
+  btn.disabled=true;
+  airtable(c,"Onboarding Tasks","PATCH",{records:[{id:task.id,fields:{"Done":true}}]}).then(function(){
+    if(c!==conn)return;
+    loadSeq++; // discard older data still on its way
+    H.forEach(function(h){h.tasks.forEach(function(t){if(t.id===task.id)t.done=true})});toast("Task marked done");showMode();render();
+  }).catch(function(err){btn.disabled=false;failed(err)});
+}
 app.addEventListener("click",function(e){
-  var t=e.target.closest(".task");if(t){H[+t.dataset.h].tasks[+t.dataset.t].done=true;toast("Task marked done");render();return}
-  var n=e.target.closest("[data-nudge]");if(n){toast("Demo only: no reminder was sent to "+H[+n.dataset.nudge].name.split(" ")[0]);return}
+  var t=e.target.closest(".task");if(t){markDone(t);return}
+  var n=e.target.closest("[data-nudge]");if(n){toast("No reminder was sent to "+H[+n.dataset.nudge].name.split(" ")[0]+". Reminders are not built yet.");return}
   var l=e.target.closest("[data-list]");if(l){var h=H[+l.dataset.list];toast(h.name.split(" ")[0]+": "+h.tasks.filter(function(x){return x.done}).length+" of "+h.tasks.length+" tasks done")}
 });
-$("fab").addEventListener("click",function(){addForm.reset();addErr.textContent="";addDlg.showModal()});
+$("fab").addEventListener("click",function(){$("addNote").textContent=conn?"This worker will be saved to your Airtable base.":"Demo mode: the worker will not be saved. Connect to Airtable to save.";openDialog("addDlg")});
 document.querySelectorAll("nav a").forEach(function(a){a.addEventListener("click",function(){document.querySelectorAll("nav a").forEach(function(x){x.removeAttribute("aria-current")});a.setAttribute("aria-current","page")})});
 document.getElementById("today").textContent=today.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
-render();
+try{conn=JSON.parse(sessionStorage.getItem(KEY))}catch(e){}
+if(conn){H=[];showMode();render();load().catch(failed)}else{showMode();render()}
 })();
 </script>
 </body>

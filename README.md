@@ -23,13 +23,21 @@ Tracks every new hire from signed offer to a confident first month.
 - **Onboarding by stage:** how many hires are at each stage.
 - **Mobile friendly:** single column on phones, bottom tab bar, every button at least 56 px.
 
-- **Add New Hire:** the "+" button opens a form (name, role, team, start date). The hire appears on the page but is not saved.
+- **Add New Hire:** the "+" button opens a form (name, role, team, start date).
+- **Two modes:**
+  - *Demo* (default): mock data. Changes are lost on reload.
+  - *Live*: tap **Connect to Airtable**. The dashboard shows your base, and saves new hires and ticked tasks to it.
 
-All figures come from mock data, and changes are lost on reload. Send Reminder only shows a message in this prototype.
+Send Reminder only shows a message in this prototype. "Avg Days to Complete" is a mock figure in demo mode and blank in live mode. Live mode has been tested against a stand-in database, not yet against a real base.
 
-### Adding workers to the database
+### Connect to Airtable
 
-The HR data is also kept in a private Airtable base. Workers are added there, with an "Add New Hire" form or directly in the table, and an automation creates the checklist tasks. The form must be published and the automation switched on in Airtable. The dashboard is not connected to the base, so it does not show these workers.
+You need an Airtable base with the tables `New Hires`, `Checklist Template` and `Onboarding Tasks`, and an automation that creates the checklist tasks for each new hire. The automation must be switched on.
+
+1. [Create a personal access token](https://airtable.com/create/tokens) with the scopes `data.records:read` and `data.records:write`, limited to the HR onboarding base only.
+2. Open the dashboard, tap **Connect to Airtable**, and enter the base ID (or the base's link) and the token.
+
+The token is kept only in that browser tab and is sent only to Airtable. It is gone when you close the tab or tap **Disconnect**. Anyone with the token can read and change the base, so use it only on your own device, and never put it in the code or this repository.
 
 ## Sales Dashboard
 

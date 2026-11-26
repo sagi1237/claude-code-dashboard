@@ -70,8 +70,8 @@ Prototype with mock data: `hr.html` (open it in a browser). The earlier sales da
 | 2 | סינון לפי צוות | חובה | ✔ |
 | 3 | סימון משימה כבוצעה | חובה | ✔ |
 | 4 | שליחת תזכורת לאחראי / לעובד | חובה | הודעת דמו בלבד |
-| 5 | הוספת עובד חדש וצ'קליסט מתבנית | חובה | ב-Airtable (טופס ואוטומציה); בדשבורד דמו בלבד |
-| 6 | התחברות והרשאות לפי תפקיד | חובה בגרסה אמיתית | ✘ |
+| 5 | הוספת עובד חדש וצ'קליסט מתבנית | חובה | ✔ (נשמר רק במצב חי; את הצ'קליסט יוצרת אוטומציה ב-Airtable) |
+| 6 | התחברות והרשאות לפי תפקיד | חובה בגרסה אמיתית | ✘ (במצב חי: טוקן אישי של Airtable) |
 | 7 | התראה על משימה באיחור (דחיפה / וואטסאפ / מייל) | רצוי | ✘ |
 | 8 | ייצוא לאקסל / PDF | רצוי | ✘ |
 | 9 | העלאת מסמכים (תעודת היגיינה, חוזה) | רצוי | ✘ |
@@ -89,13 +89,14 @@ Prototype with mock data: `hr.html` (open it in a browser). The earlier sales da
 
 **עדכון נתונים:**
 
-- **פרוטוטייפ:** נתוני דמו קבועים בקוד, בלי שרת. שינויים נשמרים רק בזיכרון הדפדפן ונעלמים ברענון.
+- **פרוטוטייפ, מצב דמו:** נתוני דמו קבועים בקוד, בלי שרת. שינויים נשמרים רק בזיכרון הדפדפן ונעלמים ברענון.
+- **פרוטוטייפ, מצב חי:** הדף קורא ושומר ישירות ב-Airtable, עם טוקן שהמשתמש מזין ונשמר רק בלשונית הדפדפן. הרענון ידני, בכפתור.
 - **גרסה אמיתית:**
   - הנתונים נטענים בכל פתיחה, ומתרעננים אוטומטית כל 5 דקות כשהדף פתוח, וגם במשיכה לרענון.
   - פעולה של משתמש (סימון משימה) נשמרת מיד, והמסך מתעדכן באותו רגע.
   - הסטטוסים ("באיחור", "מתחיל בקרוב") מחושבים מחדש בכל טעינה ובחצות.
   - על המסך מוצג **"עודכן לאחרונה ב-HH:MM"**, כדי שאף אחד לא יסתמך על נתון ישן.
-  - מקור הנתונים: Airtable (לאישור לגרסה האמיתית). בשלב זה הדשבורד אינו מחובר אליו.
+  - מקור הנתונים: Airtable (לאישור לגרסה האמיתית).
 - **שמירת מידע:** פרטי עובד נמחקים או נעלמים מהתצוגה 90 יום אחרי סיום הקליטה (לאישור מול HR והיועץ המשפטי).
 - **זמינות:** בשעות הפעילות (05:00 עד 22:00) בלי השבתות מתוכננות.
 
@@ -207,10 +208,11 @@ Status is derived: overdue tasks → Needs attention; start date in the future �
 
 ## 8. Behavior
 
-- Tapping a checkbox updates the progress bar, KPIs and status immediately.
+- Tapping a checkbox updates the progress bar, KPIs and status. In live mode it updates after Airtable confirms the save.
 - "Send Reminder" shows a confirmation toast (no real message is sent in the prototype).
-- "Add New Hire" in the dashboard adds a hire on screen only; nothing is saved.
-- Real records are added in Airtable (an "Add New Hire" form or the table), where an automation creates the checklist tasks. The dashboard does not read from Airtable.
+- Demo mode (default): mock data, clearly labelled; "Add New Hire" adds on screen only and nothing is saved.
+- Live mode: "Connect to Airtable" takes a base ID and a personal access token. The token is kept for that browser tab only and sent only to Airtable. "Add New Hire" saves the hire, an Airtable automation creates the checklist tasks, and the dashboard reloads until they appear.
+- Live mode is meant for the owner of the token on their own device; it is not a login system for the team.
 - Filter chips update all cards together.
 - Empty state: logo plus "No new hires in this team yet."
 

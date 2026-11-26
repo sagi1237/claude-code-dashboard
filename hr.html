@@ -52,6 +52,17 @@ nav a{height:var(--tab);display:flex;flex-direction:column;align-items:center;ju
 nav a span{font-size:24px;line-height:1}nav a[aria-current]{color:var(--brown);background:var(--cream);box-shadow:inset 0 4px 0 var(--gold)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tab) + 100px);background:var(--teal);color:#fff;padding:14px 22px;border-radius:14px;font-weight:800;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}.toast.show{opacity:1}
 footer{text-align:center;font-size:13px;opacity:.7;margin-top:24px}
+[hidden]{display:none!important}
+.mode{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-weight:800;font-size:14px}.mode .acts2{display:flex;gap:12px}
+dialog{width:min(560px,100%);max-width:100%;max-height:92vh;margin:auto auto 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border:0;border-radius:24px 24px 0 0;background:var(--cream);color:var(--espresso);overflow-y:auto}
+dialog::backdrop{background:rgba(62,36,16,.5)}
+dialog h2{font-size:22px;color:var(--brown);margin:0 0 12px}
+dialog form{display:grid;gap:12px}
+dialog label{display:grid;gap:6px;font-weight:800}
+dialog input,dialog select{width:100%;min-width:0;min-height:56px;padding:0 14px;border-radius:16px;border:2px solid var(--gold);background:#fff;color:inherit;font:700 18px Nunito,system-ui,sans-serif}
+.err{color:var(--berry);font-weight:800}.err:empty{display:none}
+.btn:disabled{opacity:.5;cursor:wait}
+@media(min-width:600px){dialog{margin:auto;border-radius:24px}}
 @media(min-width:600px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.span2{grid-column:1/-1}.chips{margin:0;padding:16px 0 6px}.chip{flex:0 0 auto}.head h1{font-size:26px}.acts{grid-template-columns:1fr 1fr}}
 @media(min-width:1024px){.kpis{grid-template-columns:repeat(4,1fr)}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.span2{grid-column:span 2}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -61,8 +72,9 @@ footer{text-align:center;font-size:13px;opacity:.7;margin-top:24px}
 <header><div class="wrap head"><img src="logo.png" alt="The Bakery Shop"><div><h1>HR Onboarding</h1><div class="date" id="today"></div></div></div></header>
 <main class="wrap" id="overview">
   <div class="chips" id="chips" role="group" aria-label="Team filter"></div>
+  <div class="mode"><span id="mode" role="status"></span><div class="acts2"><button class="btn secondary" id="refresh" hidden>↻ Refresh</button><button class="btn secondary" id="signout" hidden>Sign out</button></div></div>
   <div id="app"></div>
-  <footer>Mock data for demonstration</footer>
+  <footer id="foot">Mock data for demonstration</footer>
 </main>
 <button class="fab" id="fab" aria-label="Add new hire">+</button>
 <nav aria-label="Main">
@@ -70,42 +82,70 @@ footer{text-align:center;font-size:13px;opacity:.7;margin-top:24px}
   <a href="#tasks"><span>✅</span>Tasks</a><a href="#team"><span>👥</span>Team</a>
 </nav>
 <div class="toast" id="toast" role="status"></div>
+<dialog id="loginDlg" aria-labelledby="loginTitle">
+  <h2 id="loginTitle">Sign in</h2>
+  <form id="loginForm">
+    <label>Dashboard password<input type="password" name="password" autocomplete="current-password" required></label>
+    <p class="err" role="alert"></p>
+    <button class="btn primary big" type="submit">Sign In</button>
+    <button class="btn secondary big" type="button" data-close>Cancel</button>
+  </form>
+</dialog>
+<dialog id="addDlg" aria-labelledby="addTitle">
+  <h2 id="addTitle">Add New Hire</h2>
+  <form id="addForm">
+    <label>Full name<input name="name" maxlength="80" autocomplete="off" required></label>
+    <label>Role<input name="role" maxlength="80" autocomplete="off" required></label>
+    <label>Team<select name="team" required><option value="">Choose a team</option><option>Kitchen</option><option>Counter</option><option>Delivery</option><option>Admin</option></select></label>
+    <label>Start date<input type="date" name="startDate" min="2000-01-01" max="2099-12-31" required></label>
+    <p class="err" role="alert"></p>
+    <button class="btn primary big" type="submit">✔ Save New Hire</button>
+    <button class="btn secondary big" type="button" data-close>Cancel</button>
+  </form>
+</dialog>
 <script>
 (function(){
 "use strict";
-var DAY=86400000, today=new Date(); today.setHours(0,0,0,0);
-function d(off){return today.getTime()+off*DAY}
+var today=new Date(); today.setHours(0,0,0,0);
+function addDays(t,off){var x=new Date(t);x.setDate(x.getDate()+off);return x.getTime()}
+function d(off){return addDays(today.getTime(),off)}
 var TASKS=[["Sign contract and tax forms",-3],["Food hygiene certificate",-1],["Uniform and apron issued",0],["Kitchen and allergen walkthrough",0],["Shadow a shift with a buddy",2],["Learn the till and card reader",3],["First solo shift",7],["30-day check-in",30]];
 // [name, role, team, start offset in days, tasks done count, extra: tasks skipped]
+function mockHire(name,role,t,start,doneCount){return{name:name,role:role,team:t,start:start,tasks:TASKS.map(function(x,k){return{n:x[0],due:addDays(start,x[1]),done:k<doneCount}})}}
 var H=[["Maya Cohen","Baker's Assistant","Kitchen",-12,6],["Noam Katz","Barista","Counter",-5,3],["Lior Ben-David","Pastry Chef","Kitchen",-20,7],
 ["Tamar Shalev","Cashier","Counter",-9,4],["Yossi Peretz","Delivery Driver","Delivery",-2,2],["Rina Alon","Shift Manager","Admin",3,2],
-["Omer Dahan","Dishwasher","Kitchen",5,1],["Shira Golan","Barista","Counter",10,0]].map(function(h,i){
-  var s=d(h[3]);return{id:i,name:h[0],role:h[1],team:h[2],start:s,tasks:TASKS.map(function(t,k){return{n:t[0],due:s+t[1]*DAY,done:k<h[4]}})}});
+["Omer Dahan","Dishwasher","Kitchen",5,1],["Shira Golan","Barista","Counter",10,0]].map(function(h){return mockHire(h[0],h[1],h[2],d(h[3]),h[4])});
+// "demo": no server (GitHub Pages or a local file). "live": the server in netlify/functions is available.
+var live=false,signedIn=false,KEY="hrPassword",password="";
+try{password=sessionStorage.getItem(KEY)||""}catch(e){}
 var team="All",app=document.getElementById("app");
-function ini(n){return n.split(" ").map(function(x){return x[0]}).join("")}
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return"&#"+c.charCodeAt(0)+";"})}
+function ini(n){return n.split(/\s+/).filter(Boolean).slice(0,2).map(function(x){return x[0]}).join("")}
 function dstr(t){return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric"})}
 function over(h){return h.tasks.filter(function(t){return!t.done&&t.due<d(0)})}
-function pct(h){return Math.round(h.tasks.filter(function(t){return t.done}).length/h.tasks.length*100)}
+function pct(h){return h.tasks.length?Math.round(h.tasks.filter(function(t){return t.done}).length/h.tasks.length*100):0}
 function status(h){if(h.start>d(0)&&!over(h).length)return["soon","Starting soon"];return over(h).length?["warn","⚠ Needs attention"]:["ok","✔ On track"]}
 function stage(h){var p=pct(h);return p>=100?4:p>=63?3:p>=38?2:p>=13?1:0}
 function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show")},2200)}
 function render(){
+  if(live&&!signedIn){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>Sign in to see and update the HR database.</p><br><button class="btn primary big" data-signin>Sign In</button></div>';return}
   var L=H.filter(function(h){return team==="All"||h.team===team});
   if(!L.length){app.innerHTML='<div class="card empty"><img src="logo.png" alt="The Bakery Shop"><p>No new hires in this team yet.</p></div>';return}
   var od=0,prog=0,done=0,days=[];L.forEach(function(h){od+=over(h).length;if(pct(h)<100)prog++;else done++});
   var month=L.filter(function(h){return new Date(h.start).getMonth()===today.getMonth()}).length;
   var html='<section class="kpis" aria-label="Key figures">'+
-   k("New Hires This Month",month)+k("In Progress",prog)+k("Overdue Tasks",od,od>0)+k("Avg Days to Complete","14")+'</section><div class="grid">';
+   k("New Hires This Month",month)+k("In Progress",prog)+k("Overdue Tasks",od,od>0)+k("Avg Days to Complete",live?"–":"14")+'</section><div class="grid">';
   html+='<section class="card span2" id="hires"><h2>Onboarding pipeline</h2><div class="grid" style="margin-top:0">'+L.map(function(h){
-    var s=status(h);return'<article class="hire"><div class="top"><div class="av" aria-hidden="true">'+ini(h.name)+'</div><div class="n"><b>'+h.name+'</b><small>'+h.role+' · starts '+dstr(h.start)+'</small></div></div>'+
+    var s=status(h),i=H.indexOf(h);return'<article class="hire"><div class="top"><div class="av" aria-hidden="true">'+esc(ini(h.name))+'</div><div class="n"><b>'+esc(h.name)+'</b><small>'+esc(h.role)+' · starts '+dstr(h.start)+'</small></div></div>'+
     '<div><span class="badge '+s[0]+'">'+s[1]+'</span></div><div><div class="pct"><span>Progress</span><span>'+pct(h)+'%</span></div><div class="bar" role="progressbar" aria-valuenow="'+pct(h)+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct(h)+'%"></i></div></div>'+
-    '<div class="acts"><button class="btn primary" data-list="'+h.id+'">📋 Open Checklist</button><button class="btn secondary" data-nudge="'+h.id+'">🔔 Send Reminder</button></div></article>'}).join("")+'</div></section>';
+    '<div class="acts"><button class="btn primary" data-list="'+i+'">📋 Open Checklist</button><button class="btn secondary" data-nudge="'+i+'">🔔 Send Reminder</button></div></article>'}).join("")+'</div></section>';
   var next=[];L.forEach(function(h){h.tasks.forEach(function(t){if(!t.done&&t.due<=d(3))next.push({h:h,t:t})})});
   next.sort(function(a,b){return a.t.due-b.t.due});
   html+='<section class="card" id="tasks"><h2>Next tasks</h2>'+(next.length?next.slice(0,6).map(function(x){var o=x.t.due<d(0);
-    return'<button class="task" aria-pressed="false" data-h="'+x.h.id+'" data-t="'+x.h.tasks.indexOf(x.t)+'"><span class="cb">✔</span><span class="t">'+x.t.n+'<small>'+x.h.name+' · '+(o?'<span class="od">⚠ Overdue since '+dstr(x.t.due)+'</span>':'due '+dstr(x.t.due))+'</small></span></button>'}).join(""):'<p class="badge ok">✔ All caught up</p>')+'</section>';
+    return'<button class="task" aria-pressed="false" data-h="'+H.indexOf(x.h)+'" data-t="'+x.h.tasks.indexOf(x.t)+'"><span class="cb">✔</span><span class="t">'+esc(x.t.n)+'<small>'+esc(x.h.name)+' · '+(o?'<span class="od">⚠ Overdue since '+dstr(x.t.due)+'</span>':'due '+dstr(x.t.due))+'</small></span></button>'}).join(""):'<p class="badge ok">✔ All caught up</p>')+'</section>';
   var soon=L.filter(function(h){return h.start>d(0)&&h.start<=d(14)});
-  html+='<section class="card"><h2>Starting soon</h2>'+(soon.length?soon.map(function(h){return'<div class="soonrow"><span>'+h.name+'</span><span>'+dstr(h.start)+'</span></div>'}).join(""):'<p>Nobody in the next 14 days.</p>')+'</section>';
+  html+='<section class="card"><h2>Starting soon</h2>'+(soon.length?soon.map(function(h){return'<div class="soonrow"><span>'+esc(h.name)+'</span><span>'+dstr(h.start)+'</span></div>'}).join(""):'<p>Nobody in the next 14 days.</p>')+'</section>';
   var st=[0,0,0,0,0],names=["Offer signed","Paperwork","Training","First shifts","Complete"];L.forEach(function(h){st[stage(h)]++});
   html+='<section class="card" id="team"><h2>Onboarding by stage</h2>'+names.map(function(n,i){return'<div class="stage"><span>'+n+'</span><div class="bar"><i style="width:'+st[i]/L.length*100+'%"></i></div><span>'+st[i]+'</span></div>'}).join("")+'</section></div>';
   app.innerHTML=html;
@@ -114,15 +154,78 @@ function k(l,v,bad){return'<div class="kpi'+(bad?" bad":"")+'"><div class="l">'+
 var chips=document.getElementById("chips");
 chips.innerHTML=["All","Kitchen","Counter","Delivery","Admin"].map(function(t){return'<button class="chip" aria-pressed="'+(t==="All")+'">'+t+'</button>'}).join("");
 chips.addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;team=b.textContent;chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c===b)});render()});
+function parseDay(s){if(!s)return d(0);var p=s.split("-");return new Date(+p[0],p[1]-1,+p[2]).getTime()}
+function api(method,body){
+  return fetch("api/hr",{method:method,headers:{"x-hr-password":encodeURIComponent(password),"content-type":"application/json"},body:body?JSON.stringify(body):undefined})
+  .then(function(r){return r.json().catch(function(){return{}}).then(function(data){
+    if(!r.ok){var err=new Error(r.status===429?"Too many requests. Wait a minute and try again.":data.error||"The request failed");err.status=r.status;throw err}return data})})
+}
+function showMode(msg){
+  $("mode").textContent=msg||(!live?"Demo data: changes are not saved":signedIn?"Live data · updated "+new Date().toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}):"Not signed in");
+  $("refresh").hidden=$("signout").hidden=!(live&&signedIn);
+  $("foot").textContent=live?"Connected to the HR database":"Mock data for demonstration";
+}
+function load(){
+  return api("GET").then(function(data){
+    H=data.hires.map(function(h){return{name:h.name,role:h.role,team:h.team,start:parseDay(h.startDate),tasks:h.tasks.map(function(t){return{id:t.id,n:t.name,due:parseDay(t.due),done:t.done}})}});
+    signedIn=true;showMode();render();
+  })
+}
+function signOut(){password="";signedIn=false;H=[];try{sessionStorage.removeItem(KEY)}catch(e){}showMode();render()}
+function failed(err){if(err.status===401){signOut();openDialog("loginDlg",err.message)}else toast(err.message)}
+function openDialog(id,msg){var dlg=$(id);dlg.querySelector("form").reset();dlg.querySelector(".err").textContent=msg||"";if(!dlg.open)dlg.showModal()}
+document.querySelectorAll("[data-close]").forEach(function(b){b.addEventListener("click",function(){b.closest("dialog").close()})});
+function onSubmit(formId,handler){
+  var form=$(formId);form.addEventListener("submit",function(e){
+    e.preventDefault();var btn=form.querySelector("[type=submit]"),err=form.querySelector(".err");if(btn.disabled)return;
+    var values={};new FormData(form).forEach(function(v,key){values[key]=v});btn.disabled=true;err.textContent="";
+    handler(values).then(function(){form.closest("dialog").close()}).catch(function(x){err.textContent=x.message}).then(function(){btn.disabled=false});
+  })
+}
+onSubmit("loginForm",function(v){
+  password=v.password;
+  return load().then(function(){try{sessionStorage.setItem(KEY,password)}catch(e){}}).catch(function(x){password="";throw x})
+});
+onSubmit("addForm",function(v){
+  v.name=v.name.trim();v.role=v.role.trim();
+  if(!v.name||!v.role)return Promise.reject(new Error("Enter a name and a role"));
+  if(!live){H.push(mockHire(v.name,v.role,v.team,parseDay(v.startDate),0));showTeam("All");toast("Added in demo only. Not saved.");return Promise.resolve()}
+  return api("POST",v).then(function(){
+    toast(v.name+" was saved");showTeam("All");
+    return load().catch(function(){toast("Saved. Tap Refresh to see it.")})
+  })
+});
+$("refresh").addEventListener("click",function(){load().then(function(){toast("Data refreshed")}).catch(failed)});
+$("signout").addEventListener("click",signOut);
+function showTeam(name){team=name;chips.querySelectorAll(".chip").forEach(function(c){c.setAttribute("aria-pressed",c.textContent===name)});render()}
+function markDone(btn){
+  var task=H[+btn.dataset.h].tasks[+btn.dataset.t];
+  if(!live){task.done=true;toast("Task marked done");render();return}
+  btn.disabled=true;
+  api("PATCH",{taskId:task.id,done:true}).then(function(){task.done=true;toast("Task marked done");showMode();render()}).catch(function(x){btn.disabled=false;failed(x)})
+}
 app.addEventListener("click",function(e){
-  var t=e.target.closest(".task");if(t){H[+t.dataset.h].tasks[+t.dataset.t].done=true;toast("Task marked done");render();return}
-  var n=e.target.closest("[data-nudge]");if(n){toast("Reminder sent to "+H[+n.dataset.nudge].name.split(" ")[0]);return}
+  if(e.target.closest("[data-signin]")){openDialog("loginDlg");return}
+  var t=e.target.closest(".task");if(t){markDone(t);return}
+  var n=e.target.closest("[data-nudge]");if(n){toast("Demo only: no reminder was sent to "+H[+n.dataset.nudge].name.split(" ")[0]);return}
   var l=e.target.closest("[data-list]");if(l){var h=H[+l.dataset.list];toast(h.name.split(" ")[0]+": "+h.tasks.filter(function(x){return x.done}).length+" of "+h.tasks.length+" tasks done")}
 });
-document.getElementById("fab").addEventListener("click",function(){toast("Add New Hire (not in this prototype)")});
+$("fab").addEventListener("click",function(){openDialog(live&&!signedIn?"loginDlg":"addDlg")});
 document.querySelectorAll("nav a").forEach(function(a){a.addEventListener("click",function(){document.querySelectorAll("nav a").forEach(function(x){x.removeAttribute("aria-current")});a.setAttribute("aria-current","page")})});
 document.getElementById("today").textContent=today.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
-render();
+// The server answers 401 without a password. A host without it answers 404.
+function start(){
+  app.innerHTML='<div class="card empty"><p>Loading…</p></div>';
+  // A web page that cannot reach its server must not fall back to mock data.
+  fetch("api/hr").then(function(r){return r.status!==404}).catch(function(){return/^https?:$/.test(location.protocol)}).then(function(hasServer){
+    live=hasServer;
+    if(!live){showMode();render();return}
+    H=[];showMode();
+    if(!password){render();return}
+    load().catch(function(x){signedIn=false;showMode();render();failed(x)});
+  });
+}
+start();
 })();
 </script>
 </body>

@@ -34,11 +34,11 @@ Prototype with mock data: `hr.html` (open it in a browser). The earlier sales da
 | לצפות בפרטים אישיים (טלפון, ת"ז) | ✔ | ✔ | ✘ | ✘ | עצמו בלבד |
 
 עקרונות: **מינימום הרשאות** (כל אחד רואה רק מה שהוא צריך), והפרטים האישיים של עובדים הם מידע רגיש שמוגן לפי חוק הגנת הפרטיות.
-**בפרוטוטייפ הנוכחי אין התחברות והרשאות**: כולם רואים הכול עם נתוני דמו. המטריצה היא הבסיס לגרסה הבאה (ראו סעיף 10).
+**בפרוטוטייפ הנוכחי אין הרשאות לפי תפקיד**: במצב דמו כולם רואים נתוני דמו, ובמצב חי יש סיסמה משותפת אחת שנותנת גישה לכל הנתונים. המטריצה היא הבסיס לגרסה הבאה (ראו סעיף 10).
 
 ### 0.2 מה אנחנו בונים ועבור מי
 
-- **מה:** לוח בקרה (דשבורד) מבוסס דפדפן שעוקב אחרי קליטת עובדים חדשים במאפייה, מחוזה חתום ועד חודש ראשון בטוח. בלי התקנה: דף סטטי שמתארח ב-GitHub Pages ונפתח בקישור.
+- **מה:** לוח בקרה (דשבורד) מבוסס דפדפן שעוקב אחרי קליטת עובדים חדשים במאפייה, מחוזה חתום ועד חודש ראשון בטוח. בלי התקנה: דף שנפתח בקישור. מצב דמו מתארח ב-GitHub Pages; מצב חי מתארח ב-Netlify ושומר את הנתונים ב-Airtable.
 - **הבעיה שפותרים (לאישור):** היום המעקב מתבצע בהודעות, בנייר או בזיכרון, ולכן קל לפספס משימה (תעודת היגיינה, תדריך אלרגנים) ולא ברור מי אחראי.
 - **מי נהנה:**
   - ההנהלה מקבלת תמונה בשלוש שניות, בלי לשאול אף אחד.
@@ -70,8 +70,8 @@ Prototype with mock data: `hr.html` (open it in a browser). The earlier sales da
 | 2 | סינון לפי צוות | חובה | ✔ |
 | 3 | סימון משימה כבוצעה | חובה | ✔ |
 | 4 | שליחת תזכורת לאחראי / לעובד | חובה | הודעת דמו בלבד |
-| 5 | הוספת עובד חדש וצ'קליסט מתבנית | חובה | ✘ |
-| 6 | התחברות והרשאות לפי תפקיד | חובה בגרסה אמיתית | ✘ |
+| 5 | הוספת עובד חדש וצ'קליסט מתבנית | חובה | ✔ (נשמר רק במצב חי) |
+| 6 | התחברות והרשאות לפי תפקיד | חובה בגרסה אמיתית | סיסמה משותפת בלבד (מצב חי) |
 | 7 | התראה על משימה באיחור (דחיפה / וואטסאפ / מייל) | רצוי | ✘ |
 | 8 | ייצוא לאקסל / PDF | רצוי | ✘ |
 | 9 | העלאת מסמכים (תעודת היגיינה, חוזה) | רצוי | ✘ |
@@ -89,13 +89,14 @@ Prototype with mock data: `hr.html` (open it in a browser). The earlier sales da
 
 **עדכון נתונים:**
 
-- **פרוטוטייפ:** נתוני דמו קבועים בקוד, בלי שרת. שינויים נשמרים רק בזיכרון הדפדפן ונעלמים ברענון.
+- **פרוטוטייפ, מצב דמו:** נתוני דמו קבועים בקוד, בלי שרת. שינויים נשמרים רק בזיכרון הדפדפן ונעלמים ברענון.
+- **פרוטוטייפ, מצב חי:** הנתונים נקראים ונשמרים ב-Airtable דרך פונקציית שרת ב-Netlify. הרענון ידני, בכפתור.
 - **גרסה אמיתית:**
   - הנתונים נטענים בכל פתיחה, ומתרעננים אוטומטית כל 5 דקות כשהדף פתוח, וגם במשיכה לרענון.
   - פעולה של משתמש (סימון משימה) נשמרת מיד, והמסך מתעדכן באותו רגע.
   - הסטטוסים ("באיחור", "מתחיל בקרוב") מחושבים מחדש בכל טעינה ובחצות.
   - על המסך מוצג **"עודכן לאחרונה ב-HH:MM"**, כדי שאף אחד לא יסתמך על נתון ישן.
-  - מקור הנתונים (לאישור): גיליון Google Sheets או מסד נתונים קטן; ההחלטה בשלב הבא.
+  - מקור הנתונים: Airtable (לאישור לגרסה האמיתית).
 - **שמירת מידע:** פרטי עובד נמחקים או נעלמים מהתצוגה 90 יום אחרי סיום הקליטה (לאישור מול HR והיועץ המשפטי).
 - **זמינות:** בשעות הפעילות (05:00 עד 22:00) בלי השבתות מתוכננות.
 
@@ -207,7 +208,10 @@ Status is derived: overdue tasks → Needs attention; start date in the future �
 
 ## 8. Behavior
 
-- Tapping a checkbox updates the progress bar, KPIs and status immediately.
+- Tapping a checkbox updates the progress bar, KPIs and status. In live mode it updates after Airtable confirms the save.
+- "Add New Hire" saves the hire to Airtable and creates the checklist tasks, with due dates counted from the start date.
+- Live mode (hosted on Netlify): a shared password protects the data, and the Airtable token stays on the server. A "Refresh" button reloads the data and the screen shows when it was last updated.
+- Demo mode (GitHub Pages or a local file): mock data, clearly labelled, nothing saved.
 - "Send Reminder" shows a confirmation toast (no real message is sent in the prototype).
 - Filter chips update all cards together.
 - Empty state: logo plus "No new hires in this team yet."
@@ -218,7 +222,7 @@ Text status next to every color, labels on icon buttons, focus order follows vis
 
 ## 10. Out of scope (v1)
 
-Real authentication and roles, payroll, document upload, real email/SMS sending, recruiting pipeline.
+Per-person logins and roles (v1 live mode has one shared password), payroll, document upload, real email/SMS sending, recruiting pipeline.
 
 ## 11. Acceptance criteria
 
